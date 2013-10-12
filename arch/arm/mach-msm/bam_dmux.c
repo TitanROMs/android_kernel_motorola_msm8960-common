@@ -576,6 +576,7 @@ static void handle_bam_mux_cmd(struct work_struct *work)
 		spin_lock_irqsave(&bam_ch[rx_hdr->ch_id].lock, flags);
 		bam_ch[rx_hdr->ch_id].status &= ~BAM_CH_REMOTE_OPEN;
 		spin_unlock_irqrestore(&bam_ch[rx_hdr->ch_id].lock, flags);
+		queue_rx();
 		platform_device_unregister(bam_ch[rx_hdr->ch_id].pdev);
 		bam_ch[rx_hdr->ch_id].pdev =
 			platform_device_alloc(bam_ch[rx_hdr->ch_id].name, 2);
@@ -1667,16 +1668,10 @@ static void reconnect_to_bam(void)
 	if (polling_mode)
 		rx_switch_to_interrupt_mode();
 
-#ifdef CONFIG_MACH_MSM8960_MMI_SOLSTICE
 	toggle_apps_ack();
 	complete_all(&bam_connection_completion);
-	queue_rx();
-#else
 	queue_rx();
 
-	toggle_apps_ack();
-	complete_all(&bam_connection_completion);
-#endif
 }
 
 static void disconnect_to_bam(void)
@@ -1999,17 +1994,10 @@ static int bam_init(void)
 	}
 
 	bam_mux_initialized = 1;
-#ifdef CONFIG_MACH_MSM8960_MMI_SOLSTICE
 	toggle_apps_ack();
 	bam_connection_is_active = 1;
 	complete_all(&bam_connection_completion);
 	queue_rx();
-#else
-	queue_rx();
-	toggle_apps_ack();
-	bam_connection_is_active = 1;
-	complete_all(&bam_connection_completion);
-#endif
 	return 0;
 
 rx_event_reg_failed:
